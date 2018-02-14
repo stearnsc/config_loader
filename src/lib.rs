@@ -66,7 +66,7 @@ fn get_default_config_path() -> Option<PathBuf> {
     }
 }
 
-fn load_env_variables(config: toml::value::Table) -> Result<toml::value::Table, Error> {
+fn load_env_variables(config: toml::value::Table) -> Result<toml::Value, Error> {
     config.into_iter().fold(Ok(BTreeMap::new()), |result, (k, v)| {
         result.and_then(|mut acc| {
             match v {
@@ -86,7 +86,7 @@ fn load_env_variables(config: toml::value::Table) -> Result<toml::value::Table, 
                     }
                 },
                 toml::Value::Table(table) => {
-                    acc.insert(k, toml::Value::Table(load_env_variables(table)?));
+                    acc.insert(k, load_env_variables(table)?);
                 },
                 other_value => {
                     acc.insert(k, other_value);
@@ -95,7 +95,7 @@ fn load_env_variables(config: toml::value::Table) -> Result<toml::value::Table, 
 
             Ok(acc)
         })
-    })
+    }).map(|table| toml::Value::Table(table))
 }
 
 error_chain! {
@@ -130,6 +130,7 @@ mod tests {
         baz: Option<String>,
         more: SubConfig
     }
+
 
     #[test]
     fn it_works_when_all_defined() {
