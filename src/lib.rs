@@ -74,7 +74,10 @@ fn load_env_variables(config: toml::value::Table) -> Result<toml::Value, Error> 
                     let env_key = s
                         .trim_left_matches("<<ENV:")
                         .trim_right_matches(">>");
-                    let env_var = env::var(env_key)?;
+                    let env_var = env::var(env_key).map_err(|e| match e {
+                        env::VarError::NotPresent => ErrorKind::EnvVarMissing(env_key.to_owned()).into(),
+                        other => Error::from(other)
+                    })?;
                     acc.insert(k, toml::Value::String(env_var));
                 },
                 toml::Value::String(ref s) if ENV_FLAG_OPT.is_match(&s) => {
@@ -108,6 +111,13 @@ error_chain! {
         Env(env::VarError);
         Deserialization(toml::de::Error);
         Serialization(toml::ser::Error);
+    }
+
+    errors {
+        EnvVarMissing(key: String) {
+            description("Required environment variable missing")
+            display("Required environment variable '{}' not set", key)
+        }
     }
 }
 
