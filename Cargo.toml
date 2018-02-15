@@ -9,6 +9,7 @@ toml = "*"
 regex = "*"
 lazy_static = "*"
 error-chain = "*"
+itertools = "^0.7"
 
 [dev-dependencies]
 serde_derive = "*"
